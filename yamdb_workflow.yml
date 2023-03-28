@@ -1,52 +1,76 @@
-![Workflow status.](https://github.com/Saggitel/yamdb_final/actions/workflows/yamdb_workflow.yml/badge.svg)
+name: Django-app workflow
 
-# Проект YaMDb
-### Описание
-Проект **YaMDb** собирает отзывы пользователей на различные произведения, делящиеся на различные категории и жанры. Пользователи могут оставлять отзывы к произведениям, давать им оценку, а также обсуждать их в комментариях.
+on: [push]
 
-### Алгоритм регистрации пользователей
-1. Пользователь отправляет POST-запрос на добавление нового пользователя с параметрами email и username на эндпоинт /api/v1/auth/signup/.
-2. **YaMDB** отправляет письмо с кодом подтверждения (confirmation_code) на адрес email.
-3. Пользователь отправляет POST-запрос с параметрами username и confirmation_code на эндпоинт /api/v1/auth/token/, в ответе на запрос ему приходит token (JWT-токен).
-4. При желании пользователь отправляет PATCH-запрос на эндпоинт /api/v1/users/me/ и заполняет поля в своём профайле.
+jobs:
+  tests:
+    runs-on: ubuntu-latest
 
-### Технологии
-- Python 3.7
-- Django 2.2.16
-- Django REST Framework 3.12.4
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
 
-### Установка
-- Cоздать и активировать виртуальное окружение
-
-```
-python -m venv venv
-```
-
-```
-source venv/scripts/activate
-```
-
-```
-python -m pip install --upgrade pip
-```
-- Установить зависимости из файла requirements.txt
-```
-pip install -r requirements.txt
-```
-- Выполнить миграции
-
-```
-python manage.py migrate
-```
-
-- Запустить проект
-
-```
-python manage.py runserver
-```
-
-### Документация
-Документация, содержащая примеры запросов, доступна по адресу: http://127.0.0.1:8000/redoc.
-
-### Авторы
-Тимур
+    - name: Install dependencies
+      run: | 
+        python -m pip install --upgrade pip 
+        pip install flake8 pep8-naming flake8-broken-line flake8-return flake8-isort
+        pip install -r api_yamdb/requirements.txt 
+    - name: Test with flake8 and django tests
+      run: |
+        python -m flake8
+        cd api_yamdb/
+        python manage.py test
+        
+  build_and_push_to_docker_hub:
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+        
+      - name: Login to Docker 
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          
+      - name: Push to Docker Hub
+        uses: docker/build-push-action@v2 
+        with:
+          context: ./api_yamdb
+          file: ./api_yamdb/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/yamdb_final
+  
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build_and_push_to_docker_hub
+    steps:
+      - name: executing remote ssh commands to deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          script: |
+            sudo docker pull ${{ secrets.USER }}/yamdb_final
+            sudo docker stop $(sudo docker ps -a -q)
+            sudo docker run --rm -d -p 5000:5000 ${{ secrets.USER }}/yamdb_final
+  send_message:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+    - name: send message
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.TELEGRAM_TO }}
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        message: ${{ github.workflow }}
