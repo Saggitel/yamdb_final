@@ -1,13 +1,14 @@
 version: '3.8'
 
 services:
-    db:
+  db:
     image: postgres:13.0-alpine
     volumes:
-      - db_value:/var/lib/postgresql/data/
+      - /var/lib/postgresql/data/
     env_file:
       - .env
   web:
+    image: lazba/yamdb_final
     build: ../api_yamdb/
     restart: always
     volumes:
