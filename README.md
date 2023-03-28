@@ -1,5 +1,4 @@
-[Workflow status]
-(https://github.com/Saggitel/yamdb_final/actions/workflows/yamdb_workflow.yml/badge.svg)
+![Workflow status.](https://github.com/Saggitel/yamdb_final/actions/workflows/yamdb_workflow.yml/badge.svg)
 
 # Проект YaMDb
 ### Описание
