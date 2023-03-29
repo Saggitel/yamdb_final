@@ -18,15 +18,12 @@ jobs:
         python -m pip install --upgrade pip 
         pip install flake8 pep8-naming flake8-broken-line flake8-return flake8-isort
         pip install -r api_yamdb/requirements.txt 
-    
-    - name: Test with flake8
+
+    - name: Test with flake8 and django tests
       run: |
         python -m flake8
-            
-    - name: Test with pytest
-      run: |
         cd api_yamdb/
-        python pytest
+        python manage.py test
         
   build_and_push_to_docker_hub:
     name: Push Docker image to Docker Hub
@@ -53,14 +50,10 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/yamdb_final
   
-  on:
-  push:
-    branches:
-      - master
-      
   deploy:
     runs-on: ubuntu-latest
     needs: build_and_push_to_docker_hub
+    if: github.ref == 'refs/heads/develop'
     steps:
       - name: executing remote ssh commands to deploy
         uses: appleboy/ssh-action@master
@@ -84,8 +77,8 @@ jobs:
             USE_I18N=${{ secrets.USE_I18N }} >> .env
             USE_L10N=${{ secrets.USE_L10N }} >> .env
             USE_TZ=${{ secrets.USE_TZ }} >> .env
-            sudo docker-compose up -d
-            docker system prune
+            sudo docker-compose up -d 
+
   send_message:
     runs-on: ubuntu-latest
     needs: deploy
