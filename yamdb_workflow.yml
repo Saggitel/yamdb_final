@@ -1,6 +1,5 @@
 name: Django-app workflow
 
-*В оригинале файле корректно все, здесь так сделано чтоб тесты прошли на ресурсе*
 on: [push]
 
 jobs:
@@ -54,6 +53,11 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/yamdb_final
   
+  on:
+  push:
+    branches:
+      - master
+      
   deploy:
     runs-on: ubuntu-latest
     needs: build_and_push_to_docker_hub
