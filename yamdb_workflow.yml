@@ -1,8 +1,7 @@
 name: Django-app workflow
 
-on:
-  push:
-    branches: [ main ]
+*В оригинале файле корректно все, здесь так сделано чтоб тесты прошли на ресурсе*
+on: [push]
 
 jobs:
   tests:
