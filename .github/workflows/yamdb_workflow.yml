@@ -18,12 +18,10 @@ jobs:
         python -m pip install --upgrade pip 
         pip install flake8 pep8-naming flake8-broken-line flake8-return flake8-isort
         pip install -r api_yamdb/requirements.txt 
-
-    - name: Test with flake8 and django tests
+    - name: Test with flake8 and pytest
       run: |
         python -m flake8
-        cd api_yamdb/
-        python manage.py test
+        pytest
         
   build_and_push_to_docker_hub:
     name: Push Docker image to Docker Hub
@@ -78,7 +76,6 @@ jobs:
             USE_L10N=${{ secrets.USE_L10N }} >> .env
             USE_TZ=${{ secrets.USE_TZ }} >> .env
             sudo docker-compose up -d 
-
   send_message:
     runs-on: ubuntu-latest
     needs: deploy
