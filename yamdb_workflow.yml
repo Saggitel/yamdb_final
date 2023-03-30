@@ -51,7 +51,7 @@ jobs:
           tags: ${{ secrets.DOCKER_USERNAME }}/yamdb_final
   
   deploy:
-    if: if: github.ref == 'refs/heads/develop'
+    if: if: github.ref == 'refs/pull/develop'
     runs-on: ubuntu-latest
     needs: build_and_push_to_docker_hub
     steps:
